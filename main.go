@@ -1,115 +1,33 @@
 package main
 
 import (
-	"bytes"
-	"crypto/sha1"
-	"encoding/binary"
 	"flag"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
-const VERSION = "1.0"
+const VERSION = "2.0"
 
-type (
-	Header struct {
-		Unknown1stByte int8
-		Unknown2ndByte int8
-		Filesize       uint32
-		FilenameSize   int8
-		MaybePadding   int8
-	}
-
-	Entry struct {
-		Header
-		FileName []byte
-		Content  []byte
-		Sha1     [20]byte
-	}
-
-	Star struct {
-		Entries []Entry
-	}
-)
-
-func (e *Entry) GetFileName() string {
-	return string(e.FileName[:])
+func usage() {
+	fmt.Println("Usage: stargazer <operation> <arguments>")
+	fmt.Println("")
+	fmt.Println("  To extract files:")
+	fmt.Println("    stargazer x <star file> [output dir (optional)]")
+	fmt.Println("")
+	fmt.Println("  To pack a folder:")
+	fmt.Println("    stargazer p <input dir> <star file>")
+	fmt.Println("")
+	os.Exit(1)
 }
 
-func (e *Entry) CalculateSha1() []byte {
-	h := sha1.New()
-	h.Write(e.Content)
-	return h.Sum(nil)
-}
-
-func (e *Entry) GetSha1() string {
-	return fmt.Sprintf("%x", e.Sha1)
-}
-
-func (e *Entry) Extract(outputDir string) error {
-	fp := filepath.Join(outputDir, e.GetFileName())
-	err := os.MkdirAll(filepath.Dir(fp), os.ModePerm)
-	if err != nil {
-		return err
-	}
-	f, err := os.Create(fp)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	_, err = f.Write(e.Content)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func ParseEntry(file io.Reader) (*Entry, error) {
-	entry := Entry{}
-	err := binary.Read(file, binary.LittleEndian, &entry.Header.Unknown1stByte)
-	if err == io.EOF {
-		return nil, err
-	}
-
-	binary.Read(file, binary.LittleEndian, &entry.Header.Unknown2ndByte)
-
-	binary.Read(file, binary.LittleEndian, &entry.Header.Filesize)
-
-	binary.Read(file, binary.LittleEndian, &entry.Header.FilenameSize)
-	binary.Read(file, binary.LittleEndian, &entry.Header.MaybePadding)
-
-	filename := make([]byte, entry.Header.FilenameSize)
-	binary.Read(file, binary.LittleEndian, &filename)
-	entry.FileName = filename
-
-	entry.Content = make([]byte, entry.Header.Filesize)
-	binary.Read(file, binary.LittleEndian, &entry.Content)
-
-	binary.Read(file, binary.LittleEndian, &entry.Sha1)
-
-	calculatedHash := entry.CalculateSha1()
-
-	if !bytes.Equal(calculatedHash, entry.Sha1[:]) {
-		log.Fatalln("Hash mismatch")
-	}
-
-	return &entry, nil
-}
-
-func main() {
-	fmt.Printf("Stargazer v%s\n", VERSION)
-	flag.Parse()
-	if flag.NArg() < 1 || flag.NArg() > 2 {
-		fmt.Println("Usage: stargazer <file> [output dir (optional)]")
-		os.Exit(1)
-	}
-	inputFile := flag.Arg(0)
-	outputDir := flag.Arg(1)
+func extract() {
+	inputFile := flag.Arg(1)
+	outputDir := flag.Arg(2)
 	if outputDir == "" {
 		outputDir = fmt.Sprintf("%s_extracted", filepath.Base(strings.TrimSuffix(inputFile, filepath.Ext(inputFile))))
 	}
@@ -146,4 +64,78 @@ func main() {
 	}
 
 	log.Println("Extraction complete!")
+}
+
+func pack() {
+	log.Printf("WARNING!!! Packing is experimental and may not work properly!\n")
+	inputDir := flag.Arg(1)
+	outputFile := flag.Arg(2)
+	if outputFile == "" {
+		outputFile = fmt.Sprintf("%s_packed.star", filepath.Base(inputDir))
+	}
+
+	log.Println("Reading files...")
+	var star Star
+	err := filepath.Walk(inputDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+		entry := Entry{}
+		fp := strings.TrimPrefix(path, inputDir)
+		fp = strings.TrimPrefix(fp, string(os.PathSeparator))
+		entry.FileName = []byte(strings.ReplaceAll(fp, "\\", "/"))
+		entry.Content, err = ioutil.ReadFile(path)
+		if err != nil {
+			return err
+		}
+
+		entry.Header.Headersize = uint8(8 + len(entry.GetFileName()))
+		entry.Header.Filesize = uint32(len(entry.Content))
+		entry.Header.FilenameSize = uint8(len(entry.GetFileName()))
+
+		copy(entry.Sha1[:], entry.CalculateSha1())
+		star.Entries = append(star.Entries, entry)
+		return nil
+	})
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	log.Println("Packing...")
+	file, err := os.Create(outputFile)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer file.Close()
+
+	for _, entry := range star.Entries {
+		log.Printf("Packing %s...\n", entry.GetFileName())
+		err := entry.Pack(file)
+		if err != nil {
+			log.Fatalln(err)
+		}
+	}
+	log.Println("Packing complete!")
+}
+
+func main() {
+	fmt.Printf("Stargazer v%s\n", VERSION)
+	flag.Parse()
+	if flag.NArg() < 1 || flag.NArg() > 3 {
+		usage()
+		os.Exit(1)
+	}
+	operation := flag.Arg(0)
+	switch operation {
+	case "x":
+		extract()
+	case "p":
+		pack()
+	default:
+		usage()
+	}
 }
