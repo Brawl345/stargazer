@@ -42,10 +42,15 @@ jobs:
         with:
           go-version: ${{ env.GOVER }}
 
+      - name: Run tests
+        working-directory: pkg/stargazer
+        run: go test
+
       - name: Build
         env:
           GOOS: ${{ matrix.GOOS }}
           GOARCH: ${{ matrix.GOARCH }}
+        working-directory: cmd/stargazer
         run: go build -ldflags="-s -w" -o dist/$NAME-$GOOS-$GOARCH
 
       - name: Rename binaries (Windows)
