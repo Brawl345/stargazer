@@ -13,13 +13,13 @@ jobs:
         os: [ ubuntu-latest, macos-latest, windows-latest ]
     runs-on: ${{ matrix.os }}
     steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
       - name: Setup Go
         uses: actions/setup-go@v3
         with:
           go-version-file: 'go.mod'
-
-      - name: Checkout repo
-        uses: actions/checkout@v3
 
       - name: Cache
         uses: actions/cache@v3
@@ -52,13 +52,14 @@ jobs:
             GOARCH: arm
 
     steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
       - name: Setup Go
         uses: actions/setup-go@v3
         with:
           go-version-file: 'go.mod'
 
-      - name: Checkout repo
-        uses: actions/checkout@v3
 
       - name: Cache
         uses: actions/cache@v3
