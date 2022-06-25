@@ -29,9 +29,9 @@ jobs:
             ~/.cache/go-build
             ~/Library/Caches/go-build
             ~\AppData\Local\go-build
-          key: ${{ runner.os }}-go-${{ env.GOVER }}-${{ hashFiles('**/go.sum') }}
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
-            ${{ runner.os }}-go-${{ env.GOVER }}-
+            ${{ runner.os }}-go-
       - name: Run tests
         run: go test ./...
 
