@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"log"
 	"os"
@@ -22,6 +23,7 @@ func main() {
 		Version:              "2.0.0",
 		Suggest:              true,
 		EnableBashCompletion: true,
+		HideHelpCommand:      true,
 		Authors: []*cli.Author{
 			{
 				Name: "Brawl345",
@@ -57,6 +59,28 @@ func main() {
 					},
 				},
 				Action: unpack,
+			},
+			{
+				Name:    "pack",
+				Aliases: []string{"p"},
+				Usage:   "Pack a folder into a STAR file",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:        "input",
+						Aliases:     []string{"i"},
+						Required:    true,
+						Usage:       "Path to a folder",
+						Destination: &input,
+					},
+					&cli.StringFlag{
+						Name:        "output",
+						Aliases:     []string{"o"},
+						Required:    false,
+						Usage:       "Output path of the STAR file. Defaults to '<input folder>_packed.star'",
+						Destination: &output,
+					},
+				},
+				Action: pack,
 			},
 			{
 				Name:    "info",
@@ -105,6 +129,49 @@ func unpack(_ *cli.Context) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func pack(_ *cli.Context) error {
+	if output == "" {
+		output = fmt.Sprintf("%s_packed.star", filepath.Base(input))
+	}
+
+	if !quiet {
+		log.Printf("Will pack to '%s'", output)
+	}
+
+	if !quiet {
+		log.Printf("Reading '%s'...", input)
+	}
+
+	star, err := stargazer.NewSTARFileFromDirectory(input)
+
+	if err != nil {
+		return err
+	}
+
+	if !quiet {
+		log.Printf("Writing to '%s'...\n", output)
+	}
+
+	out, err := os.Create(output)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	writer := bufio.NewWriter(out)
+	_, err = star.WriteTo(writer)
+	if err != nil {
+		return err
+	}
+
+	err = writer.Flush()
+	if err != nil {
+		return err
 	}
 
 	return nil

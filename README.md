@@ -17,8 +17,8 @@ USAGE:
 
 COMMANDS:
    unpack, u  Unpacks files from a STAR file
+   pack, p    Pack a folder into a STAR file
    info, i    Shows information about a STAR file
-   help, h    Shows a list of commands or help for one command
 
 GLOBAL OPTIONS:
    --help, -h     show help (default: false)
@@ -26,7 +26,7 @@ GLOBAL OPTIONS:
    --version, -v  print the version (default: false)    
 ```
 
-### Unpack
+### Unpacking
 
 ```txt
 NAME:
@@ -42,6 +42,24 @@ OPTIONS:
 
 If no output directory is given, the file is extracted to the file name minus the extension plus "`_extracted`" (
 e.g. `xPackmanJr_0.105.star` -> `xPackmanJr_0.105_extracted`). Same goes for packing (it will append `_packed.star`).
+
+### Packing
+
+**NOTE:** The correct order of the files is not implemented yet and there are many unknowns! See [issue #1](https://github.com/Brawl345/stargazer/issues/1).
+
+```txt
+NAME:
+   stargazer pack - Pack a folder into a STAR file
+
+USAGE:
+   stargazer pack [command options] [arguments...]
+
+OPTIONS:
+   --input value, -i value   Path to a folder
+   --output value, -o value  Output path of the STAR file. Defaults to '<input folder>_packed.star'
+```
+
+If no output STAR file is given, the file will be created in the same directory as the stargazer binary with the name of the folder plus `_packed.star`.
 
 ### Info
 

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Package>
+    <ID>000</ID>
+    <Name>NulledFile</Name>
+    <Title> </Title>
+    <PlatformName>PSXJA3</PlatformName>
+    <Description> </Description>
+    <Files/>
+    <Dependencies/>
+    <Version>
+        <Major>0</Major>
+        <Minor>100</Minor>
+    </Version>
+</Package>
