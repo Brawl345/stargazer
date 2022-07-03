@@ -41,7 +41,7 @@ func (e ErrFilenameTooLong) Error() string {
 }
 
 func (e ErrFileTooLarge) Error() string {
-	return fmt.Sprintf("file '%s' is too large, needs to be < %d bytes.", e.Filename, math.MaxUint32)
+	return fmt.Sprintf("file '%s' is too large, needs to be < %d bytes.", e.Filename, uint32(math.MaxUint32))
 }
 
 func (e ErrNotAFile) Error() string {
