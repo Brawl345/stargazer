@@ -3,7 +3,6 @@ package stargazer
 import (
 	"errors"
 	"fmt"
-	"math"
 )
 
 var ErrNoEntries = errors.New("invalid STAR file - no file entries found")
@@ -16,10 +15,6 @@ type (
 	}
 
 	ErrFilenameTooLong struct {
-		Filename string
-	}
-
-	ErrFileTooLarge struct {
 		Filename string
 	}
 
@@ -38,10 +33,6 @@ func (e ErrSHA1Mismatch) Error() string {
 
 func (e ErrFilenameTooLong) Error() string {
 	return fmt.Sprintf("filename '%s' is too long, needs to be < %d characters.", e.Filename, MaxFilenameSize)
-}
-
-func (e ErrFileTooLarge) Error() string {
-	return fmt.Sprintf("file '%s' is too large, needs to be < %d bytes.", e.Filename, uint32(math.MaxUint32))
 }
 
 func (e ErrNotAFile) Error() string {

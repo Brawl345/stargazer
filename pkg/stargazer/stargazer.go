@@ -7,7 +7,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
-	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -183,12 +182,6 @@ func NewEntryFromFile(dir string, f string) (*Entry, error) {
 	entry.Content, err = io.ReadAll(file)
 	if err != nil {
 		return nil, err
-	}
-
-	if len(entry.Content) > math.MaxUint32 {
-		return nil, ErrFileTooLarge{
-			Filename: filename,
-		}
 	}
 
 	entry.Header.Filesize = uint32(len(entry.Content))
